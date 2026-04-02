@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARGOS - Salud</title>
+    <link rel="icon" href="img/seguraicon.ico" type="image/x-icon">
+                            
+    <!-- AMD config -->
+    <script>
+        window.dojoConfig = {
+            async: true,
+            packages: [{
+                name: "js",
+                location: location.pathname.replace(/\/[^/]+$/, "") + "/js"
+            }]
+        };
+    </script>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://js.arcgis.com/4.31/"></script>
+    <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+
+    <link rel="stylesheet" href="./css/estilos.css">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-light" style="background-color: #0077b6; color: white;">
+        <div class="container-fluid">
+            <div class="navbar-title">
+                <img src="img/logosegura.png" alt="Logo" />
+                <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                    <strong style="color: #ffffff; letter-spacing: 2px; font-size: 1.4rem;">ARGOS</strong>
+                    <span style="font-size: 0.55em; color: #cce9f6; font-weight: 400; letter-spacing: 0.3px;">
+                        Atenciones y Registro Geográfico Operativo en Salud
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div id="viewDiv">
+            <div class="map-dropdown">
+                <!-- Elementos ocultos que uiSetup.js / mapa.js referencian por ID -->
+                <div id="iconAtenciones" class="icon-layer esri-icon" title="Consultas Médicas"  style="display:none;"></div>
+                <div id="iconPoi"        class="icon-layer esri-icon" title="Establecimientos"   style="display:none;"></div>
+                <div id="iconAgas"       class="icon-layer esri-icon" title="Coberturas AGAs"    style="display:none;"></div>
+                <div id="iconSectores"   class="icon-layer esri-icon" title="Sectores"           style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Elaborado por: Coordinación Técnica de Estadística y Datos — Sistema de Información Geográfica en Salud <br>
+        Fuente: Registros de Atención Médica y Establecimientos de Salud
+    </footer>
+
+    <script src="js/mapa.js"></script>
+</body>
+
+</html>
