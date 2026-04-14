@@ -19,7 +19,7 @@ require([
 
     // ── Capas ─────────────────────────────────────────────────────────────────
     const {
-        atencionesLayer, poiLayer, agasLayer, sectoresLayer
+        atencionesLayer, poiLayer, agasLayer, sectoresLayer, vulnerablesLayer
     } = capasModule.crearCapas();
 
     const map = mapSetup.crearMapaBase();
@@ -50,12 +50,14 @@ require([
             contarEntidades(atencionesLayer, geometry),
             contarEntidades(poiLayer, geometry),
             contarEntidades(agasLayer, geometry),
-            contarEntidades(sectoresLayer, geometry)
+            contarEntidades(sectoresLayer, geometry),
+            contarEntidades(vulnerablesLayer, geometry)
         ]).then(function (results) {
             const rAtenciones = results[0];
             const rPoi = results[1];
             const rAgas = results[2];
             const rSectores = results[3];
+            const rVulnerables = results[4];
 
             const esFiltrado = !!geometry || queryZonaActiva;
             const colorFondo = esFiltrado ? "rgba(0,119,182,0.12)" : "transparent";
@@ -82,7 +84,9 @@ require([
                 "<strong style=\"color:#0077b6;\">Zonas</strong>" +
                 "<div style=\"padding-left:8px;margin-top:2px;\">" +
                 rAgas.count + "  AGAS" + "<br>" +
-                rSectores.count + "  Sectores" +
+                rSectores.count + "  Sectores" + "<br>" +
+                rVulnerables.count + "  Vulnerables" +
+                
                 "</div></div>";
         });
     }
@@ -94,14 +98,14 @@ require([
     ];
 
     // Polígonos primero (abajo), puntos encima
-    [agasLayer, sectoresLayer, atencionesLayer, poiLayer].forEach(function (layer) {
+    [agasLayer, sectoresLayer, vulnerablesLayer, atencionesLayer, poiLayer].forEach(function (layer) {
         layer.visible = false;
         map.add(layer);
     });
 
     // ── UI ────────────────────────────────────────────────────────────────────
     const ui = setupUI(view, {
-        capas: { atencionesLayer, poiLayer, agasLayer, sectoresLayer },
+        capas: { atencionesLayer, poiLayer, agasLayer, sectoresLayer, vulnerablesLayer },
         conteoDiv: conteoDiv,
         onFiltroChange: function (activo) {
             queryZonaActiva = activo;

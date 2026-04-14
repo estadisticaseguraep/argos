@@ -7,7 +7,7 @@ define([
 
     return function setupUI(view, opciones) {
         const { capas, conteoDiv, onFiltroChange } = opciones;
-        const { agasLayer, sectoresLayer } = capas;
+        const { agasLayer, sectoresLayer, vulnerablesLayer } = capas;
 
         view.ui.add(new Fullscreen({ view }), "top-right");
         view.ui.add(new Expand({
@@ -212,6 +212,16 @@ define([
             poiLayer: capas.poiLayer,
             geojson: "geojson/sectores.geojson",
             campo: "SECT_NOMEN"
+        }));
+
+        accordion.appendChild(crearItemZona({
+            heading: "Zonas Vulnerables",
+            color: "#1eb600",
+            layer: vulnerablesLayer,
+            atencionesLayer: capas.atencionesLayer,
+            poiLayer: capas.poiLayer,
+            geojson: "geojson/vulnerables.geojson",
+            campo: "AGA"
         }));
 
         panes["zonas"].appendChild(accordion);
