@@ -14,8 +14,8 @@ define([
                 symbol: {
                     type: "picture-marker",
                     url: "img/doctors.png",
-                    width: "42px",
-                    height: "42px"
+                    width: "32px",
+                    height: "32px"
                 }
             },
             popupTemplate: {
