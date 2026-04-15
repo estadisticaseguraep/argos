@@ -216,7 +216,7 @@ define([
         }));
 
         accordion.appendChild(crearItemZona({
-            heading: "Zonas Vulnerables",
+            heading: "Habitantes Vulnerables",
             color: "#1eb600",
             layer: vulnerablesLayer,
             atencionesLayer: capas.atencionesLayer,
