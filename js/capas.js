@@ -8,7 +8,7 @@ define([
     function createAtencionesLayer(url) {
         return new GeoJSONLayer({
             url: url,
-            title: "Consultas Médicas",
+            title: "Brigadas Médicas",
             renderer: {
                 type: "simple",
                 symbol: {

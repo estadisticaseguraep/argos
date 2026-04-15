@@ -71,7 +71,7 @@ require([
                 "padding-bottom:4px;\">" + tituloLabel + "</h4>" +
 
                 "<div style=\"margin-bottom:8px;\">" +
-                "<strong style=\"color:#e84646;\">Consultas</strong>" +
+                "<strong style=\"color:#e84646;\">Brigadas Médicas</strong>" +
                 "<div style=\"padding-left:8px;margin-top:2px;\">" +
                 rAtenciones.count.toLocaleString() + " atenciones</div></div>" +
 
@@ -94,7 +94,7 @@ require([
 
     // ── Configuración de capas ────────────────────────────────────────────────
     const puntosConfig = [
-        { layer: atencionesLayer, label: "Consultas Médicas", color: "#0077b6" },
+        { layer: atencionesLayer, label: "Brigadas Médicas", color: "#0077b6" },
         { layer: poiLayer, label: "Establecimientos Salud", color: "#e84646" }
     ];
 
