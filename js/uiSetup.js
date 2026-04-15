@@ -2,8 +2,9 @@
 define([
     "esri/widgets/Expand",
     "esri/widgets/Fullscreen",
-    "esri/widgets/BasemapGallery"
-], function (Expand, Fullscreen, BasemapGallery) {
+    "esri/widgets/BasemapGallery",
+    "esri/widgets/Legend"
+], function (Expand, Fullscreen, BasemapGallery, Legend) {
 
     return function setupUI(view, opciones) {
         const { capas, conteoDiv, onFiltroChange } = opciones;
@@ -299,6 +300,32 @@ define([
             expandTooltip: "Panel de Control",
             expanded: true
         }), "top-left");
+
+        // ── Legend Vulnerables (bottom-left, visible solo cuando capa activa) ─────
+        const legend = new Legend({
+            view: view,
+            layerInfos: [{
+                layer: vulnerablesLayer,
+                title: "Población Vulnerable por AGA"
+            }]
+        });
+
+        const legendExpand = new Expand({
+            view: view,
+            content: legend,
+            expandIcon: "legend",
+            expandTooltip: "Población Vulnerable por AGA",
+            expanded: true
+        });
+
+        legendExpand.visible = false; 
+
+        vulnerablesLayer.watch("visible", function (isVisible) {
+            legendExpand.visible = isVisible;
+            if (!isVisible) legendExpand.collapse();
+        });
+
+        view.ui.add(legendExpand, "bottom-left"); 
 
         // ── API pública ───────────────────────────────────────────────────────
         return {

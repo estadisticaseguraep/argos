@@ -10,7 +10,7 @@ require([
         requestAnimationFrame(function () {
             const n = map.layers.length;
             const capasAlFrente = [atencionesLayer, poiLayer]
-                .filter(function (l) { return map.layers.includes(l); });
+                .filter(function (l) { return map.layers.indexOf(l) !== -1; });
             capasAlFrente.forEach(function (layer, i) {
                 map.reorder(layer, n - capasAlFrente.length + i);
             });
@@ -86,15 +86,16 @@ require([
                 rAgas.count + "  AGAS" + "<br>" +
                 rSectores.count + "  Sectores" + "<br>" +
                 rVulnerables.count + "  Vulnerables" +
-                
-                "</div></div>";
+
+                "</div></div>" +   
+                "</div>";
         });
     }
 
     // ── Configuración de capas ────────────────────────────────────────────────
     const puntosConfig = [
         { layer: atencionesLayer, label: "Consultas Médicas", color: "#0077b6" },
-        { layer: poiLayer, label: "Establecimientos Salud",   color: "#e84646" }
+        { layer: poiLayer, label: "Establecimientos Salud", color: "#e84646" }
     ];
 
     // Polígonos primero (abajo), puntos encima
