@@ -59,7 +59,7 @@ define([
                             symbol: simbolo,
                             attributes: {
                                 Nombre: r.Nombre || "",
-                                Fecha: r.Fecha || "",
+                                Fecha_Brigada: r.Fecha_Brigada || "",
                                 Año: r["Año"] || "",
                                 Sector: r.Sector || "",
                                 AGA: r.AGA || "",
@@ -72,7 +72,7 @@ define([
                                     type: "fields",
                                     fieldInfos: [
                                         { fieldName: "Nombre", label: "Nombre" },
-                                        { fieldName: "Fecha", label: "Fecha" },
+                                        { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
                                         { fieldName: "Año", label: "Año" },
                                         { fieldName: "Sector", label: "Sector" },
                                         { fieldName: "AGA", label: "AGA" },
