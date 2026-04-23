@@ -7,7 +7,7 @@ define([
     "esri/geometry/Point"
 ], function (GeoJSONLayer, SimpleFillSymbol, GraphicsLayer, Graphic, Point) {
 
-    const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy2D0-SsWXW7pspyGzbNI2HYa2UrxAMOWI_4uax7FwA2Try0kwQ5LbOcRsGWXSKc3I9MmyVa88RUE5/pub?gid=1382941136&single=true&output=csv";
+    const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lM9ZUF0w1aQG-npMPdGFYuthLLR5N35YwiY84EFpBmNt83aSuq3ll9LtJN1ihWcx71S7itd2Xtq2/pub?gid=249981787&single=true&output=csv";
 
     // ── Helper: parsea CSV simple (sin dependencias) ─────────────────────────
     function parsearCSV(texto) {
@@ -59,21 +59,25 @@ define([
                             symbol: simbolo,
                             attributes: {
                                 Nombre: r.Nombre || "",
-                                AÑO: r["AÑO"] || "",
-                                Descripcio: r.Descripcio || "",
-                                SECT_NOMEN: r.SECT_NOMEN || "",
-                                AGA: r.AGA || ""
+                                Fecha: r.Fecha || "",
+                                Año: r["Año"] || "",
+                                Sector: r.Sector || "",
+                                AGA: r.AGA || "",
+                                Parroquia: r.Parroquia || "",
+                                Telefono: r.Telefono || ""
                             },
                             popupTemplate: {
-                                title: "Consulta Médica",
+                                title: "Brigada Médica",
                                 content: [{
                                     type: "fields",
                                     fieldInfos: [
-                                        { fieldName: "Nombre", label: "Detalle" },
-                                        { fieldName: "AÑO", label: "Año" },
-                                        { fieldName: "Descripcio", label: "Descripción" },
-                                        { fieldName: "SECT_NOMEN", label: "Sector" },
-                                        { fieldName: "AGA", label: "Aga" }
+                                        { fieldName: "Nombre", label: "Nombre" },
+                                        { fieldName: "Fecha", label: "Fecha" },
+                                        { fieldName: "Año", label: "Año" },
+                                        { fieldName: "Sector", label: "Sector" },
+                                        { fieldName: "AGA", label: "AGA" },
+                                        { fieldName: "Parroquia", label: "Parroquia" },
+                                        { fieldName: "Telefono", label: "Teléfono" }
                                     ]
                                 }]
                             }
