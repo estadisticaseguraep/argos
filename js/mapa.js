@@ -34,6 +34,14 @@ require([
 
     // ── Conteo ────────────────────────────────────────────────────────────────
     function contarEntidades(layer, geometry) {
+
+        if (layer.type === "graphics") {
+            return Promise.resolve({
+                title: layer.title,
+                count: layer.graphics.length
+            });
+        }
+
         const query = layer.createQuery();
         query.where = layer.definitionExpression || "1=1";
         if (geometry) {
@@ -87,7 +95,7 @@ require([
                 rSectores.count + "  Sectores" + "<br>" +
                 rVulnerables.count + "  Vulnerables" +
 
-                "</div></div>" +   
+                "</div></div>" +
                 "</div>";
         });
     }

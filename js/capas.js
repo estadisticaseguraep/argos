@@ -1,37 +1,104 @@
 // js/capas.js  —  ARGOS · Salud
 define([
     "esri/layers/GeoJSONLayer",
-    "esri/symbols/SimpleFillSymbol"
-], function (GeoJSONLayer, SimpleFillSymbol) {
+    "esri/symbols/SimpleFillSymbol",
+    "esri/layers/GraphicsLayer",
+    "esri/Graphic",
+    "esri/geometry/Point"
+], function (GeoJSONLayer, SimpleFillSymbol, GraphicsLayer, Graphic, Point) {
 
-    // ── Consultas médicas (puntos con icono PNG) ──────────────────────────────
-    function createAtencionesLayer(url) {
-        return new GeoJSONLayer({
-            url: url,
-            title: "Brigadas Médicas",
-            renderer: {
-                type: "simple",
-                symbol: {
-                    type: "picture-marker",
-                    url: "img/doctors.png",
-                    width: "32px",
-                    height: "32px"
-                }
-            },
-            popupTemplate: {
-                title: "Consulta Médica",
-                content: [{
-                    type: "fields",
-                    fieldInfos: [
-                        { fieldName: "Nombre", label: "Detalle" },
-                        { fieldName: "AÑO", label: "Año" },
-                        { fieldName: "Descripcio", label: "Descripción" },
-                        { fieldName: "SECT_NOMEN", label: "Sector" },
-                        { fieldName: "AGA", label: "Aga" }
-                    ]
-                }]
-            }
+    const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy2D0-SsWXW7pspyGzbNI2HYa2UrxAMOWI_4uax7FwA2Try0kwQ5LbOcRsGWXSKc3I9MmyVa88RUE5/pub?gid=1382941136&single=true&output=csv";
+
+    // ── Helper: parsea CSV simple (sin dependencias) ─────────────────────────
+    function parsearCSV(texto) {
+        const filas = texto.trim().split("\n");
+        const cabeceras = filas[0].split(",").map(function (c) { return c.trim().replace(/^"|"$/g, ""); });
+        return filas.slice(1).map(function (fila) {
+            const valores = fila.split(",").map(function (v) { return v.trim().replace(/^"|"$/g, ""); });
+            const obj = {};
+            cabeceras.forEach(function (c, i) { obj[c] = valores[i] || ""; });
+            return obj;
         });
+    }
+
+    // ── Crea GraphicsLayer desde Google Sheets CSV ───────────────────────────
+    function createAtencionesLayer() {
+        const layer = new GraphicsLayer({
+            title: "Brigadas Médicas"
+        });
+
+        // Guarda todos los gráficos para filtrar en memoria después
+        layer._todosLosGraphics = [];
+
+        const simbolo = {
+            type: "picture-marker",
+            url: "img/doctors.png",
+            width: "32px",
+            height: "32px"
+        };
+
+        // Carga inicial desde Sheets
+        fetch(SHEETS_CSV_URL + "&t=" + Date.now())
+            .then(function (r) { return r.text(); })
+            .then(function (texto) {
+                const registros = parsearCSV(texto);
+
+                const graphics = registros
+                    .filter(function (r) {
+                        return r.Latitud && r.Longitud &&
+                            !isNaN(parseFloat(r.Latitud)) &&
+                            !isNaN(parseFloat(r.Longitud));
+                    })
+                    .map(function (r) {
+                        return new Graphic({
+                            geometry: new Point({
+                                latitude: parseFloat(r.Latitud),
+                                longitude: parseFloat(r.Longitud),
+                                spatialReference: { wkid: 4326 }
+                            }),
+                            symbol: simbolo,
+                            attributes: {
+                                Nombre: r.Nombre || "",
+                                AÑO: r["AÑO"] || "",
+                                Descripcio: r.Descripcio || "",
+                                SECT_NOMEN: r.SECT_NOMEN || "",
+                                AGA: r.AGA || ""
+                            },
+                            popupTemplate: {
+                                title: "Consulta Médica",
+                                content: [{
+                                    type: "fields",
+                                    fieldInfos: [
+                                        { fieldName: "Nombre", label: "Detalle" },
+                                        { fieldName: "AÑO", label: "Año" },
+                                        { fieldName: "Descripcio", label: "Descripción" },
+                                        { fieldName: "SECT_NOMEN", label: "Sector" },
+                                        { fieldName: "AGA", label: "Aga" }
+                                    ]
+                                }]
+                            }
+                        });
+                    });
+
+                layer._todosLosGraphics = graphics;
+                layer.addMany(graphics);
+            })
+            .catch(function (e) { console.error("Error cargando Sheets:", e); });
+
+        // ── Método de filtrado en memoria (reemplaza definitionExpression) ───
+        layer.filtrarPorCampo = function (campo, valores) {
+            layer.removeAll();
+            if (!valores || valores.length === 0) {
+                layer.addMany(layer._todosLosGraphics);
+                return;
+            }
+            const filtrados = layer._todosLosGraphics.filter(function (g) {
+                return valores.indexOf(g.attributes[campo]) !== -1;
+            });
+            layer.addMany(filtrados);
+        };
+
+        return layer;
     }
 
     // ── Establecimientos de salud (POI, icono PNG) ────────────────────────────
@@ -185,25 +252,25 @@ define([
                         {
                             fieldName: "Parroquia",
                             label: "Parroquia"
-                        },{
+                        }, {
                             fieldName: "TOTAL_BENEF",
                             label: "Total de Personas Vulnerables",
                             format: {
-                                digitSeparator: true 
+                                digitSeparator: true
                             }
-                        },{
+                        }, {
                             fieldName: "TOTAL_AGA",
                             label: "Total de Habitantes por AGA",
-                            format: { 
-                                digitSeparator: true 
+                            format: {
+                                digitSeparator: true
                             }
                         },
                         {
                             fieldName: "TASA_10K",
                             label: "Tasa por 10k Habitantes",
                             format: {
-                                places: 2, 
-                                digitSeparator: true 
+                                places: 2,
+                                digitSeparator: true
                             }
                         },
                         {

@@ -152,7 +152,7 @@ define([
                         ci.removeAttribute("selected");
                     });
                     cfg.layer.definitionExpression = "1=1";
-                    cfg.atencionesLayer.definitionExpression = "1=1";
+                    cfg.atencionesLayer.filtrarPorCampo(cfg.campo, []);
                     cfg.poiLayer.definitionExpression = "1=1";
                     if (onFiltroChange) onFiltroChange(false);
                 }
@@ -164,7 +164,7 @@ define([
 
                 if (sel.length === 0) {
                     cfg.layer.definitionExpression = "1=1";
-                    cfg.atencionesLayer.definitionExpression = "1=1";
+                    cfg.atencionesLayer.filtrarPorCampo(cfg.campo, []);
                     cfg.poiLayer.definitionExpression = "1=1";
                     if (onFiltroChange) onFiltroChange(false);
                     return;
@@ -175,7 +175,7 @@ define([
 
                 // Filtrar la capa de zona y la capa de atenciones
                 cfg.layer.definitionExpression = expr;
-                cfg.atencionesLayer.definitionExpression = expr;
+                cfg.atencionesLayer.filtrarPorCampo(cfg.campo, sel);
                 cfg.poiLayer.definitionExpression = expr;
 
                 // Notificar para actualizar el conteo
