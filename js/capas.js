@@ -1,15 +1,11 @@
 // js/capas.js  —  ARGOS · Salud
 define([
     "esri/layers/GeoJSONLayer",
-    "esri/symbols/SimpleFillSymbol",
-    "esri/layers/GraphicsLayer",
-    "esri/Graphic",
-    "esri/geometry/Point"
-], function (GeoJSONLayer, SimpleFillSymbol, GraphicsLayer, Graphic, Point) {
+    "esri/symbols/SimpleFillSymbol"
+], function (GeoJSONLayer, SimpleFillSymbol) {
 
     const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRUBlj07rIgsuUc06O31K2jBG544KRSmL2GeHFdaAHarqx63yzFjZtNBWFUbi8iyCjyNmcvPQRgwo8X/pub?gid=249981787&single=true&output=csv";
 
-    // ── Helper: parsea CSV simple (sin dependencias) ─────────────────────────
     function parsearCSV(texto) {
         const filas = texto.trim().split("\n");
         const cabeceras = filas[0].split(",").map(function (c) { return c.trim().replace(/^"|"$/g, ""); });
@@ -21,37 +17,8 @@ define([
         });
     }
 
-    // ── Crea GraphicsLayer desde Google Sheets CSV ───────────────────────────
-    function createAtencionesLayer() {
-        // Construir GeoJSON en memoria desde el CSV de Sheets
-        const layer = new GeoJSONLayer({
-            title: "Brigadas Médicas",
-            renderer: {
-                type: "simple",
-                symbol: {
-                    type: "picture-marker",
-                    url: "img/doctors.png",
-                    width: "32px",
-                    height: "32px"
-                }
-            },
-            popupTemplate: {
-                title: "Brigada Médica",
-                content: [{
-                    type: "fields", fieldInfos: [
-                        { fieldName: "Nombre", label: "Nombre" },
-                        { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
-                        { fieldName: "Año", label: "Año" },
-                        { fieldName: "Sector", label: "Sector" },
-                        { fieldName: "AGA", label: "AGA" },
-                        { fieldName: "Parroquia", label: "Parroquia" },
-                        { fieldName: "Telefono", label: "Teléfono" }
-                    ]
-                }]
-            }
-        });
-
-        // Carga el CSV y construye un Blob GeoJSON para alimentar la capa
+    // ── Atenciones: carga CSV → Blob → GeoJSONLayer ──────────────────────────
+    function createAtencionesLayer(onLista) {
         fetch(SHEETS_CSV_URL + "&t=" + Date.now())
             .then(function (r) { return r.text(); })
             .then(function (texto) {
@@ -63,54 +30,72 @@ define([
                             !isNaN(parseFloat(r.Latitud)) &&
                             !isNaN(parseFloat(r.Longitud));
                     })
-                    .map(function (r, i) {
+                    .map(function (r) {
+                        const jitter = 0.000009;
                         return {
                             type: "Feature",
-                            id: i,
                             geometry: {
                                 type: "Point",
-                                coordinates: [parseFloat(r.Longitud), parseFloat(r.Latitud)]
+                                coordinates: [
+                                    parseFloat(r.Longitud) + (Math.random() - 0.5) * jitter,
+                                    parseFloat(r.Latitud)  + (Math.random() - 0.5) * jitter
+                                ]
                             },
                             properties: {
-                                Nombre: r.Nombre || "",
+                                Nombre:        r.Nombre        || "",
                                 Fecha_Brigada: r.Fecha_Brigada || "",
-                                Año: r["Año"] || "",
-                                Sector: r.Sector || "",
-                                AGA: r.AGA || "",
-                                Parroquia: r.Parroquia || "",
-                                Telefono: r.Telefono || ""
+                                Año:           r["Año"]        || "",
+                                Sector:        r.Sector        || "",
+                                AGA:           r.AGA           || "",
+                                Parroquia:     r.Parroquia     || "",
+                                Telefono:      r.Telefono      || ""
                             }
                         };
                     });
 
-                const geojson = { type: "FeatureCollection", features: features };
-                const blob = new Blob([JSON.stringify(geojson)], { type: "application/json" });
-                layer.url = URL.createObjectURL(blob);
+                const blob = new Blob(
+                    [JSON.stringify({ type: "FeatureCollection", features: features })],
+                    { type: "application/json" }
+                );
 
-                layer.when(function () {
-                    if (typeof layer._onCargado === "function") layer._onCargado();
+                const layer = new GeoJSONLayer({
+                    url: URL.createObjectURL(blob),
+                    title: "Brigadas Médicas",
+                    renderer: {
+                        type: "simple",
+                        symbol: {
+                            type: "picture-marker",
+                            url: "img/doctors.png",
+                            width: "32px",
+                            height: "32px"
+                        }
+                    },
+                    popupTemplate: {
+                        title: "Brigada Médica",
+                        content: [{ type: "fields", fieldInfos: [
+                            { fieldName: "Nombre",        label: "Nombre" },
+                            { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
+                            { fieldName: "Año",           label: "Año" },
+                            { fieldName: "Sector",        label: "Sector" },
+                            { fieldName: "AGA",           label: "AGA" },
+                            { fieldName: "Parroquia",     label: "Parroquia" },
+                            { fieldName: "Telefono",      label: "Teléfono" }
+                        ]}]
+                    }
                 });
 
-                // Callback para mapa.js (conteo inicial)
-                if (typeof layer._onCargado === "function") layer._onCargado();
+                layer.filtrarPorCampo = function (campo, valores) {
+                    layer.definitionExpression = (!valores || valores.length === 0)
+                        ? "1=1"
+                        : campo + " IN (" + valores.map(function (v) { return "'" + v + "'"; }).join(",") + ")";
+                };
+
+                if (typeof onLista === "function") onLista(layer);
             })
             .catch(function (e) { console.error("Error cargando Sheets:", e); });
-
-        // Filtro por campo (Zonas) — ahora usa definitionExpression como el resto
-        layer.filtrarPorCampo = function (campo, valores) {
-            if (!valores || valores.length === 0) {
-                layer.definitionExpression = "1=1";
-            } else {
-                const whereIn = valores.map(function (v) { return "'" + v + "'"; }).join(",");
-                layer.definitionExpression = campo + " IN (" + whereIn + ")";
-            }
-        };
-
-        layer._onCargado = null;
-        return layer;
     }
 
-    // ── Establecimientos de salud (POI, icono PNG) ────────────────────────────
+    // ── POI ───────────────────────────────────────────────────────────────────
     function createPoiLayer(url) {
         return new GeoJSONLayer({
             url: url,
@@ -129,17 +114,18 @@ define([
                 content: [{
                     type: "fields",
                     fieldInfos: [
-                        { fieldName: "NOMBRE", label: "Nombre" },
-                        { fieldName: "SECTOR", label: "Sector" },
+                        { fieldName: "NOMBRE",    label: "Nombre" },
+                        { fieldName: "SECTOR",    label: "Sector" },
                         { fieldName: "DESCRIPCI", label: "Descripción" },
                         { fieldName: "DIRECCION", label: "Dirección" },
-                        { fieldName: "HORARIO", label: "Horario" }
+                        { fieldName: "HORARIO",   label: "Horario" }
                     ]
                 }]
             }
         });
     }
 
+    // ── AGAs ──────────────────────────────────────────────────────────────────
     function createAgasLayer(url) {
         return new GeoJSONLayer({
             url: url,
@@ -152,7 +138,7 @@ define([
                 })
             },
             labelingInfo: [{
-                labelExpressionInfo: { expression: '$feature.aga' },
+                labelExpressionInfo: { expression: "$feature.aga" },
                 symbol: {
                     type: "text",
                     color: [0, 119, 182],
@@ -164,17 +150,15 @@ define([
             }],
             popupTemplate: {
                 title: "AGA: {AGA}",
-                content: [{
-                    type: "fields",
-                    fieldInfos: [
-                        { fieldName: "PARROQUIA", label: "Parroquia" },
-                        { fieldName: "AGA", label: "Aga" }
-                    ]
-                }]
+                content: [{ type: "fields", fieldInfos: [
+                    { fieldName: "PARROQUIA", label: "Parroquia" },
+                    { fieldName: "AGA",       label: "AGA" }
+                ]}]
             }
         });
     }
 
+    // ── Sectores ──────────────────────────────────────────────────────────────
     function createSectoresLayer(url) {
         return new GeoJSONLayer({
             url: url,
@@ -187,7 +171,7 @@ define([
                 })
             },
             labelingInfo: [{
-                labelExpressionInfo: { expression: '$feature.SECT_NOMEN' },
+                labelExpressionInfo: { expression: "$feature.SECT_NOMEN" },
                 symbol: {
                     type: "text",
                     color: [0, 77, 128],
@@ -199,33 +183,31 @@ define([
             }],
             popupTemplate: {
                 title: "Sector: {SECT_NOMEN}",
-                content: [{
-                    type: "fields",
-                    fieldInfos: [
-                        { fieldName: "Cuadrante", label: "Cuadrante" },
-                        { fieldName: "Ordenanza", label: "Ordenanza" },
-                        { fieldName: "Aprobacion", label: "Aprobación" }
-                    ]
-                }]
+                content: [{ type: "fields", fieldInfos: [
+                    { fieldName: "Cuadrante",  label: "Cuadrante" },
+                    { fieldName: "Ordenanza",  label: "Ordenanza" },
+                    { fieldName: "Aprobacion", label: "Aprobación" }
+                ]}]
             }
         });
     }
 
+    // ── Vulnerables ───────────────────────────────────────────────────────────
     function createVulnerablesLayer(url) {
-
         const redRamp = {
             Q1: { color: [254, 242, 242, 0.5], border: [254, 202, 202] },
             Q2: { color: [254, 202, 202, 0.5], border: [252, 165, 165] },
             Q3: { color: [252, 165, 165, 0.5], border: [248, 113, 113] },
-            Q4: { color: [239, 68, 68, 0.5], border: [220, 38, 38] },
-            Q5: { color: [153, 27, 27, 0.6], border: [127, 29, 29] }
+            Q4: { color: [239, 68,  68,  0.5], border: [220, 38,  38]  },
+            Q5: { color: [153, 27,  27,  0.6], border: [127, 29,  29]  }
         };
-
-        const createSymbol = (level) => ({
-            type: "simple-fill",
-            color: redRamp[level].color,
-            outline: { color: redRamp[level].border, width: 1.2 }
-        });
+        const createSymbol = function (level) {
+            return {
+                type: "simple-fill",
+                color: redRamp[level].color,
+                outline: { color: redRamp[level].border, width: 1.2 }
+            };
+        };
 
         return new GeoJSONLayer({
             url: url,
@@ -235,11 +217,11 @@ define([
                 type: "unique-value",
                 field: "Escala",
                 uniqueValueInfos: [
-                    { value: "Q1", label: "Bajo", symbol: createSymbol("Q1") },
+                    { value: "Q1", label: "Bajo",        symbol: createSymbol("Q1") },
                     { value: "Q2", label: "Medio - Bajo", symbol: createSymbol("Q2") },
-                    { value: "Q3", label: "Medio", symbol: createSymbol("Q3") },
+                    { value: "Q3", label: "Medio",        symbol: createSymbol("Q3") },
                     { value: "Q4", label: "Medio - Alto", symbol: createSymbol("Q4") },
-                    { value: "Q5", label: "Alto", symbol: createSymbol("Q5") }
+                    { value: "Q5", label: "Alto",         symbol: createSymbol("Q5") }
                 ]
             },
             labelingInfo: [{
@@ -255,50 +237,24 @@ define([
             }],
             popupTemplate: {
                 title: "Sector: {AGA}",
-                content: [{
-                    type: "fields",
-                    fieldInfos: [
-                        {
-                            fieldName: "Parroquia",
-                            label: "Parroquia"
-                        }, {
-                            fieldName: "TOTAL_BENEF",
-                            label: "Total de Personas Vulnerables",
-                            format: {
-                                digitSeparator: true
-                            }
-                        }, {
-                            fieldName: "TOTAL_AGA",
-                            label: "Total de Habitantes por AGA",
-                            format: {
-                                digitSeparator: true
-                            }
-                        },
-                        {
-                            fieldName: "TASA_10K",
-                            label: "Tasa por 10k Habitantes",
-                            format: {
-                                places: 2,
-                                digitSeparator: true
-                            }
-                        },
-                        {
-                            fieldName: "Escala",
-                            label: "Nivel de Vulnerabilidad"
-                        }
-                    ]
-                }]
+                content: [{ type: "fields", fieldInfos: [
+                    { fieldName: "Parroquia",    label: "Parroquia" },
+                    { fieldName: "TOTAL_BENEF",  label: "Total de Personas Vulnerables", format: { digitSeparator: true } },
+                    { fieldName: "TOTAL_AGA",    label: "Total de Habitantes por AGA",   format: { digitSeparator: true } },
+                    { fieldName: "TASA_10K",     label: "Tasa por 10k Habitantes",       format: { places: 2, digitSeparator: true } },
+                    { fieldName: "Escala",       label: "Nivel de Vulnerabilidad" }
+                ]}]
             }
         });
     }
 
     // ── Exportación ───────────────────────────────────────────────────────────
-    function crearCapas() {
+    function crearCapas(onAtencionesLista) {
+        createAtencionesLayer(onAtencionesLista);
         return {
-            atencionesLayer: createAtencionesLayer("geojson/atenciones.geojson"),
-            poiLayer: createPoiLayer("geojson/poi.geojson"),
-            agasLayer: createAgasLayer("geojson/agas.geojson"),
-            sectoresLayer: createSectoresLayer("geojson/sectores.geojson"),
+            poiLayer:         createPoiLayer("geojson/poi.geojson"),
+            agasLayer:        createAgasLayer("geojson/agas.geojson"),
+            sectoresLayer:    createSectoresLayer("geojson/sectores.geojson"),
             vulnerablesLayer: createVulnerablesLayer("geojson/vulnerables.geojson")
         };
     }
