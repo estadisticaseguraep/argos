@@ -8,7 +8,7 @@ define([
 ], function (GeoJSONLayer, SimpleFillSymbol, GraphicsLayer, Graphic, Point) {
 
     const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRUBlj07rIgsuUc06O31K2jBG544KRSmL2GeHFdaAHarqx63yzFjZtNBWFUbi8iyCjyNmcvPQRgwo8X/pub?gid=249981787&single=true&output=csv";
-                            
+
     // ── Helper: parsea CSV simple (sin dependencias) ─────────────────────────
     function parsearCSV(texto) {
         const filas = texto.trim().split("\n");
@@ -23,41 +23,55 @@ define([
 
     // ── Crea GraphicsLayer desde Google Sheets CSV ───────────────────────────
     function createAtencionesLayer() {
-        const layer = new GraphicsLayer({
-            title: "Brigadas Médicas"
+        // Construir GeoJSON en memoria desde el CSV de Sheets
+        const layer = new GeoJSONLayer({
+            title: "Brigadas Médicas",
+            renderer: {
+                type: "simple",
+                symbol: {
+                    type: "picture-marker",
+                    url: "img/doctors.png",
+                    width: "32px",
+                    height: "32px"
+                }
+            },
+            popupTemplate: {
+                title: "Brigada Médica",
+                content: [{
+                    type: "fields", fieldInfos: [
+                        { fieldName: "Nombre", label: "Nombre" },
+                        { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
+                        { fieldName: "Año", label: "Año" },
+                        { fieldName: "Sector", label: "Sector" },
+                        { fieldName: "AGA", label: "AGA" },
+                        { fieldName: "Parroquia", label: "Parroquia" },
+                        { fieldName: "Telefono", label: "Teléfono" }
+                    ]
+                }]
+            }
         });
 
-        // Guarda todos los gráficos para filtrar en memoria después
-        layer._todosLosGraphics = [];
-
-        const simbolo = {
-            type: "picture-marker",
-            url: "img/doctors.png",
-            width: "32px",
-            height: "32px"
-        };
-
-        // Carga inicial desde Sheets
+        // Carga el CSV y construye un Blob GeoJSON para alimentar la capa
         fetch(SHEETS_CSV_URL + "&t=" + Date.now())
             .then(function (r) { return r.text(); })
             .then(function (texto) {
                 const registros = parsearCSV(texto);
 
-                const graphics = registros
+                const features = registros
                     .filter(function (r) {
                         return r.Latitud && r.Longitud &&
                             !isNaN(parseFloat(r.Latitud)) &&
                             !isNaN(parseFloat(r.Longitud));
                     })
-                    .map(function (r) {
-                        return new Graphic({
-                            geometry: new Point({
-                                latitude: parseFloat(r.Latitud),
-                                longitude: parseFloat(r.Longitud),
-                                spatialReference: { wkid: 4326 }
-                            }),
-                            symbol: simbolo,
-                            attributes: {
+                    .map(function (r, i) {
+                        return {
+                            type: "Feature",
+                            id: i,
+                            geometry: {
+                                type: "Point",
+                                coordinates: [parseFloat(r.Longitud), parseFloat(r.Latitud)]
+                            },
+                            properties: {
                                 Nombre: r.Nombre || "",
                                 Fecha_Brigada: r.Fecha_Brigada || "",
                                 Año: r["Año"] || "",
@@ -65,43 +79,34 @@ define([
                                 AGA: r.AGA || "",
                                 Parroquia: r.Parroquia || "",
                                 Telefono: r.Telefono || ""
-                            },
-                            popupTemplate: {
-                                title: "Brigada Médica",
-                                content: [{
-                                    type: "fields",
-                                    fieldInfos: [
-                                        { fieldName: "Nombre", label: "Nombre" },
-                                        { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
-                                        { fieldName: "Año", label: "Año" },
-                                        { fieldName: "Sector", label: "Sector" },
-                                        { fieldName: "AGA", label: "AGA" },
-                                        { fieldName: "Parroquia", label: "Parroquia" },
-                                        { fieldName: "Telefono", label: "Teléfono" }
-                                    ]
-                                }]
                             }
-                        });
+                        };
                     });
 
-                layer._todosLosGraphics = graphics;
-                layer.addMany(graphics);
+                const geojson = { type: "FeatureCollection", features: features };
+                const blob = new Blob([JSON.stringify(geojson)], { type: "application/json" });
+                layer.url = URL.createObjectURL(blob);
+
+                layer.when(function () {
+                    if (typeof layer._onCargado === "function") layer._onCargado();
+                });
+
+                // Callback para mapa.js (conteo inicial)
+                if (typeof layer._onCargado === "function") layer._onCargado();
             })
             .catch(function (e) { console.error("Error cargando Sheets:", e); });
 
-        // ── Método de filtrado en memoria (reemplaza definitionExpression) ───
+        // Filtro por campo (Zonas) — ahora usa definitionExpression como el resto
         layer.filtrarPorCampo = function (campo, valores) {
-            layer.removeAll();
             if (!valores || valores.length === 0) {
-                layer.addMany(layer._todosLosGraphics);
-                return;
+                layer.definitionExpression = "1=1";
+            } else {
+                const whereIn = valores.map(function (v) { return "'" + v + "'"; }).join(",");
+                layer.definitionExpression = campo + " IN (" + whereIn + ")";
             }
-            const filtrados = layer._todosLosGraphics.filter(function (g) {
-                return valores.indexOf(g.attributes[campo]) !== -1;
-            });
-            layer.addMany(filtrados);
         };
 
+        layer._onCargado = null;
         return layer;
     }
 
