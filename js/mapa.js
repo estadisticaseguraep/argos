@@ -5,16 +5,16 @@ require([
     capasModule, setupUI, mapSetup, iniciarQueryGeometria
 ) {
 
-    const map  = mapSetup.crearMapaBase();
+    const map = mapSetup.crearMapaBase();
     const view = mapSetup.crearMapView(map);
 
     const conteoDiv = document.createElement("div");
     conteoDiv.style.minWidth = "200px";
 
     // ── Estado ────────────────────────────────────────────────────────────────
-    let atencionesLayer  = null;   // se asigna cuando el CSV termina de cargar
-    let queryGeomActiva  = null;
-    let queryZonaActiva  = false;
+    let atencionesLayer = null;   // se asigna cuando el CSV termina de cargar
+    let queryGeomActiva = null;
+    let queryZonaActiva = false;
 
     // ── Conteo ────────────────────────────────────────────────────────────────
     function contarEntidades(layer, geometry) {
@@ -28,25 +28,27 @@ require([
         }
         return layer.queryFeatureCount(query)
             .then(function (count) { return { title: layer.title, count: count }; })
-            .catch(function ()      { return { title: layer.title, count: 0    }; });
+            .catch(function () { return { title: layer.title, count: 0 }; });
     }
 
     function actualizarConteo(geometry) {
         Promise.all([
-            contarEntidades(atencionesLayer,  geometry),
-            contarEntidades(poiLayer,         geometry),
-            contarEntidades(agasLayer,        geometry),
-            contarEntidades(sectoresLayer,    geometry),
+            contarEntidades(atencionesLayer, geometry),
+            contarEntidades(atencionesPHLayer, geometry),
+            contarEntidades(poiLayer, geometry),
+            contarEntidades(agasLayer, geometry),
+            contarEntidades(sectoresLayer, geometry),
             contarEntidades(vulnerablesLayer, geometry)
         ]).then(function (results) {
             const rAtenciones = results[0];
-            const rPoi        = results[1];
-            const rAgas       = results[2];
-            const rSectores   = results[3];
-            const rVulnerables= results[4];
+            const rAtencionesPH = results[1];
+            const rPoi = results[2];
+            const rAgas = results[3];
+            const rSectores = results[4];
+            const rVulnerables = results[5];
 
-            const esFiltrado  = !!geometry || queryZonaActiva;
-            const colorFondo  = esFiltrado ? "rgba(0,119,182,0.12)" : "transparent";
+            const esFiltrado = !!geometry || queryZonaActiva;
+            const colorFondo = esFiltrado ? "rgba(0,119,182,0.12)" : "transparent";
             const tituloLabel = esFiltrado ? "Registros filtrados" : "Totales";
 
             conteoDiv.innerHTML =
@@ -61,6 +63,11 @@ require([
                 "<div style=\"padding-left:8px;margin-top:2px;\">" +
                 rAtenciones.count.toLocaleString() + " atenciones</div></div>" +
 
+                "<div style=\"margin-bottom:8px;\">" +
+                "<strong style=\"color:#e84646;\">Atenciones PH</strong>" +
+                "<div style=\"padding-left:8px;margin-top:2px;\">" +
+                results[1].count.toLocaleString() + " atenciones</div></div>" +
+
                 "<div style=\"border-top:1px solid rgba(0,119,182,0.15);padding-top:6px;\">" +
                 "<strong style=\"color:#0077b6;\">Establecimientos</strong>" +
                 "<div style=\"padding-left:8px;margin-top:2px;\">" +
@@ -69,15 +76,15 @@ require([
                 "<div style=\"border-top:1px solid rgba(0,119,182,0.15);padding-top:6px;margin-top:6px;\">" +
                 "<strong style=\"color:#0077b6;\">Zonas</strong>" +
                 "<div style=\"padding-left:8px;margin-top:2px;\">" +
-                rAgas.count      + "  AGAS"       + "<br>" +
-                rSectores.count  + "  Sectores"   + "<br>" +
+                rAgas.count + "  AGAS" + "<br>" +
+                rSectores.count + "  Sectores" + "<br>" +
                 rVulnerables.count + "  Vulnerables" +
                 "</div></div></div>";
         });
     }
 
     // ── Capas síncronas ───────────────────────────────────────────────────────
-    const { poiLayer, agasLayer, sectoresLayer, vulnerablesLayer } =
+    const { atencionesPHLayer, poiLayer, agasLayer, sectoresLayer, vulnerablesLayer } =
         capasModule.crearCapas(function (layer) {
             // Callback: atencionesLayer lista → agregar al mapa y contar
             atencionesLayer = layer;
@@ -94,7 +101,7 @@ require([
     function traerGraficosAlFrente() {
         requestAnimationFrame(function () {
             const n = map.layers.length;
-            const capasAlFrente = [atencionesLayer, poiLayer]
+            const capasAlFrente = [atencionesLayer, atencionesPHLayer, poiLayer]
                 .filter(function (l) { return l && map.layers.indexOf(l) !== -1; });
             capasAlFrente.forEach(function (layer, i) {
                 map.reorder(layer, n - capasAlFrente.length + i);
@@ -104,15 +111,23 @@ require([
 
     function puntosConfig() {
         return [
-            { layer: atencionesLayer, label: "Brigadas Médicas",     color: "#0077b6",
-              onChange: function () { traerGraficosAlFrente(); } },
-            { layer: poiLayer,        label: "Establecimientos Salud", color: "#e84646",
-              onChange: function () { traerGraficosAlFrente(); } }
+            {
+                layer: atencionesLayer, label: "Brigadas Médicas", color: "#0077b6",
+                onChange: function () { traerGraficosAlFrente(); }
+            },
+            {
+                layer: atencionesPHLayer, label: "Atenciones PH", color: "#28a745",  // ← AGREGAR
+                onChange: function () { traerGraficosAlFrente(); }
+            },
+            {
+                layer: poiLayer, label: "Establecimientos Salud", color: "#e84646",
+                onChange: function () { traerGraficosAlFrente(); }
+            }
         ];
     }
 
     // ── Capas síncronas al mapa (polígonos abajo, poi encima) ─────────────────
-    [agasLayer, sectoresLayer, vulnerablesLayer, poiLayer].forEach(function (layer) {
+    [atencionesPHLayer, agasLayer, sectoresLayer, vulnerablesLayer, poiLayer].forEach(function (layer) {
         layer.visible = false;
         map.add(layer);
     });
@@ -129,8 +144,14 @@ require([
 
     // Checkboxes de POI ya disponible; Brigadas se registra en el callback
     ui.agregarCheckboxes("puntos-slot", [
-        { layer: poiLayer, label: "Establecimientos Salud", color: "#e84646",
-          onChange: function () { traerGraficosAlFrente(); } }
+        {
+            layer: atencionesPHLayer, label: "Atenciones PH", color: "#28a745",  conFiltroGrupos: true,
+            onChange: function () { traerGraficosAlFrente(); }
+        },
+        {
+            layer: poiLayer, label: "Establecimientos Salud", color: "#e84646",
+            onChange: function () { traerGraficosAlFrente(); }
+        }
     ]);
 
     // ── Query por geometría ───────────────────────────────────────────────────
@@ -138,7 +159,7 @@ require([
         iniciarQueryGeometria(
             view, map,
             function (geom) { queryGeomActiva = geom; actualizarConteo(geom); },
-            function ()      { queryGeomActiva = null; actualizarConteo(null); }
+            function () { queryGeomActiva = null; actualizarConteo(null); }
         );
         actualizarConteo(null);
     });

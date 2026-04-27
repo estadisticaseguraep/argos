@@ -318,14 +318,14 @@ define([
             expanded: true
         });
 
-        legendExpand.visible = false; 
+        legendExpand.visible = false;
 
         vulnerablesLayer.watch("visible", function (isVisible) {
             legendExpand.visible = isVisible;
             if (!isVisible) legendExpand.collapse();
         });
 
-        view.ui.add(legendExpand, "bottom-left"); 
+        view.ui.add(legendExpand, "bottom-left");
 
         // ── API pública ───────────────────────────────────────────────────────
         return {
@@ -341,10 +341,6 @@ define([
                     chk.type = "checkbox";
                     chk.checked = cfg.layer ? !!cfg.layer.visible : false;
                     chk.style.accentColor = cfg.color || "#0077b6";
-                    chk.addEventListener("change", function () {
-                        if (cfg.layer) cfg.layer.visible = chk.checked;
-                        if (cfg.onChange) cfg.onChange(chk.checked, cfg.layer);
-                    });
 
                     const dot = document.createElement("span");
                     dot.className = "cp-dot";
@@ -357,6 +353,43 @@ define([
                     row.appendChild(dot);
                     row.appendChild(sp);
                     slot.appendChild(row);
+
+                    // ── Combobox de Finalizacion_grupos ───────────────────────
+                    let combo = null;
+                    if (cfg.conFiltroGrupos) {
+                        combo = document.createElement("calcite-combobox");
+                        combo.setAttribute("placeholder", "Filtrar estado...");
+                        combo.setAttribute("selection-mode", "multiple");
+                        combo.setAttribute("scale", "s");
+                        combo.setAttribute("overlay-positioning", "fixed");
+                        combo.style.cssText = "display:none;margin-top:4px;width:100%;";
+
+                        ["RESUELTAS", "PENDIENTES"].forEach(function (v) {
+                            const ci = document.createElement("calcite-combobox-item");
+                            ci.setAttribute("value", v);
+                            ci.setAttribute("text-label", v);
+                            combo.appendChild(ci);
+                        });
+
+                        slot.appendChild(combo);
+
+                        combo.addEventListener("calciteComboboxChange", function () {
+                            const sel = Array.from(combo.selectedItems).map(function (i) { return i.value; });
+                            if (!sel.length) {
+                                cfg.layer.definitionExpression = null;
+                            } else {
+                                const whereIn = sel.map(function (v) { return "'" + v + "'"; }).join(",");
+                                cfg.layer.definitionExpression = "Finalizacion_grupos IN (" + whereIn + ")";
+                            }
+                        });
+                    }
+
+                    chk.addEventListener("change", function () {
+                        if (cfg.layer) cfg.layer.visible = chk.checked;
+                        if (combo) combo.style.display = chk.checked ? "" : "none";
+                        if (!chk.checked && cfg.layer) cfg.layer.definitionExpression = null;
+                        if (cfg.onChange) cfg.onChange(chk.checked, cfg.layer);
+                    });
                 });
             }
         };

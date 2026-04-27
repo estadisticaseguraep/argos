@@ -4,6 +4,8 @@ define([
     "esri/symbols/SimpleFillSymbol"
 ], function (GeoJSONLayer, SimpleFillSymbol) {
 
+    const _hoy = new Date().toISOString().substring(0, 10);
+    const _semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
     const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRUBlj07rIgsuUc06O31K2jBG544KRSmL2GeHFdaAHarqx63yzFjZtNBWFUbi8iyCjyNmcvPQRgwo8X/pub?gid=249981787&single=true&output=csv";
 
     function parsearCSV(texto) {
@@ -38,17 +40,17 @@ define([
                                 type: "Point",
                                 coordinates: [
                                     parseFloat(r.Longitud) + (Math.random() - 0.5) * jitter,
-                                    parseFloat(r.Latitud)  + (Math.random() - 0.5) * jitter
+                                    parseFloat(r.Latitud) + (Math.random() - 0.5) * jitter
                                 ]
                             },
                             properties: {
-                                Nombre:        r.Nombre        || "",
+                                Nombre: r.Nombre || "",
                                 Fecha_Brigada: r.Fecha_Brigada || "",
-                                Año:           r["Año"]        || "",
-                                Sector:        r.Sector        || "",
-                                AGA:           r.AGA           || "",
-                                Parroquia:     r.Parroquia     || "",
-                                Telefono:      r.Telefono      || ""
+                                Año: r["Año"] || "",
+                                Sector: r.Sector || "",
+                                AGA: r.AGA || "",
+                                Parroquia: r.Parroquia || "",
+                                Telefono: r.Telefono || ""
                             }
                         };
                     });
@@ -72,15 +74,17 @@ define([
                     },
                     popupTemplate: {
                         title: "Brigada Médica",
-                        content: [{ type: "fields", fieldInfos: [
-                            { fieldName: "Nombre",        label: "Nombre" },
-                            { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
-                            { fieldName: "Año",           label: "Año" },
-                            { fieldName: "Sector",        label: "Sector" },
-                            { fieldName: "AGA",           label: "AGA" },
-                            { fieldName: "Parroquia",     label: "Parroquia" },
-                            { fieldName: "Telefono",      label: "Teléfono" }
-                        ]}]
+                        content: [{
+                            type: "fields", fieldInfos: [
+                                { fieldName: "Nombre", label: "Nombre" },
+                                { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
+                                { fieldName: "Año", label: "Año" },
+                                { fieldName: "Sector", label: "Sector" },
+                                { fieldName: "AGA", label: "AGA" },
+                                { fieldName: "Parroquia", label: "Parroquia" },
+                                { fieldName: "Telefono", label: "Teléfono" }
+                            ]
+                        }]
                     }
                 });
 
@@ -114,11 +118,11 @@ define([
                 content: [{
                     type: "fields",
                     fieldInfos: [
-                        { fieldName: "NOMBRE",    label: "Nombre" },
-                        { fieldName: "SECTOR",    label: "Sector" },
+                        { fieldName: "NOMBRE", label: "Nombre" },
+                        { fieldName: "SECTOR", label: "Sector" },
                         { fieldName: "DESCRIPCI", label: "Descripción" },
                         { fieldName: "DIRECCION", label: "Dirección" },
-                        { fieldName: "HORARIO",   label: "Horario" }
+                        { fieldName: "HORARIO", label: "Horario" }
                     ]
                 }]
             }
@@ -150,10 +154,12 @@ define([
             }],
             popupTemplate: {
                 title: "AGA: {AGA}",
-                content: [{ type: "fields", fieldInfos: [
-                    { fieldName: "PARROQUIA", label: "Parroquia" },
-                    { fieldName: "AGA",       label: "AGA" }
-                ]}]
+                content: [{
+                    type: "fields", fieldInfos: [
+                        { fieldName: "PARROQUIA", label: "Parroquia" },
+                        { fieldName: "AGA", label: "AGA" }
+                    ]
+                }]
             }
         });
     }
@@ -183,11 +189,13 @@ define([
             }],
             popupTemplate: {
                 title: "Sector: {SECT_NOMEN}",
-                content: [{ type: "fields", fieldInfos: [
-                    { fieldName: "Cuadrante",  label: "Cuadrante" },
-                    { fieldName: "Ordenanza",  label: "Ordenanza" },
-                    { fieldName: "Aprobacion", label: "Aprobación" }
-                ]}]
+                content: [{
+                    type: "fields", fieldInfos: [
+                        { fieldName: "Cuadrante", label: "Cuadrante" },
+                        { fieldName: "Ordenanza", label: "Ordenanza" },
+                        { fieldName: "Aprobacion", label: "Aprobación" }
+                    ]
+                }]
             }
         });
     }
@@ -198,8 +206,8 @@ define([
             Q1: { color: [254, 242, 242, 0.5], border: [254, 202, 202] },
             Q2: { color: [254, 202, 202, 0.5], border: [252, 165, 165] },
             Q3: { color: [252, 165, 165, 0.5], border: [248, 113, 113] },
-            Q4: { color: [239, 68,  68,  0.5], border: [220, 38,  38]  },
-            Q5: { color: [153, 27,  27,  0.6], border: [127, 29,  29]  }
+            Q4: { color: [239, 68, 68, 0.5], border: [220, 38, 38] },
+            Q5: { color: [153, 27, 27, 0.6], border: [127, 29, 29] }
         };
         const createSymbol = function (level) {
             return {
@@ -217,11 +225,11 @@ define([
                 type: "unique-value",
                 field: "Escala",
                 uniqueValueInfos: [
-                    { value: "Q1", label: "Bajo",        symbol: createSymbol("Q1") },
+                    { value: "Q1", label: "Bajo", symbol: createSymbol("Q1") },
                     { value: "Q2", label: "Medio - Bajo", symbol: createSymbol("Q2") },
-                    { value: "Q3", label: "Medio",        symbol: createSymbol("Q3") },
+                    { value: "Q3", label: "Medio", symbol: createSymbol("Q3") },
                     { value: "Q4", label: "Medio - Alto", symbol: createSymbol("Q4") },
-                    { value: "Q5", label: "Alto",         symbol: createSymbol("Q5") }
+                    { value: "Q5", label: "Alto", symbol: createSymbol("Q5") }
                 ]
             },
             labelingInfo: [{
@@ -237,13 +245,52 @@ define([
             }],
             popupTemplate: {
                 title: "Sector: {AGA}",
-                content: [{ type: "fields", fieldInfos: [
-                    { fieldName: "Parroquia",    label: "Parroquia" },
-                    { fieldName: "TOTAL_BENEF",  label: "Total de Personas Vulnerables", format: { digitSeparator: true } },
-                    { fieldName: "TOTAL_AGA",    label: "Total de Habitantes por AGA",   format: { digitSeparator: true } },
-                    { fieldName: "TASA_10K",     label: "Tasa por 10k Habitantes",       format: { places: 2, digitSeparator: true } },
-                    { fieldName: "Escala",       label: "Nivel de Vulnerabilidad" }
-                ]}]
+                content: [{
+                    type: "fields", fieldInfos: [
+                        { fieldName: "Parroquia", label: "Parroquia" },
+                        { fieldName: "TOTAL_BENEF", label: "Total de Personas Vulnerables", format: { digitSeparator: true } },
+                        { fieldName: "TOTAL_AGA", label: "Total de Habitantes por AGA", format: { digitSeparator: true } },
+                        { fieldName: "TASA_10K", label: "Tasa por 10k Habitantes", format: { places: 2, digitSeparator: true } },
+                        { fieldName: "Escala", label: "Nivel de Vulnerabilidad" }
+                    ]
+                }]
+            }
+        });
+    }
+
+    function createAtencionesPHLayer() {
+        return new GeoJSONLayer({
+            url: `https://siesep.seguraep.gob.ec/Lectura_Fichas/consulta_historico.php?desde=${_semanaAtras}&hasta=${_hoy}&agencia=ATENCI%20PH&limit=25000`,
+            title: "Atenciones PH",
+            fields: [
+                { name: "Fecha", type: "string" },
+                { name: "Ficha", type: "string" },
+                { name: "Estado", type: "string" },
+                { name: "Agencia", type: "string" },
+                { name: "Tipo", type: "string" },
+                { name: "SubTipo", type: "string" },
+                { name: "Finalizacion_grupos", type: "string" }
+            ],
+            objectIdField: "Ficha",
+            renderer: {
+                type: "unique-value",
+                field: "Finalizacion_grupos",
+                defaultSymbol: { type: "simple-marker", color: [255, 140, 0, 0.8], size: 6, outline: null },
+                uniqueValueInfos: [
+                    { value: "RESUELTAS", label: "Resueltas", symbol: { type: "simple-marker", color: [40, 167, 69, 0.8], size: 6, outline: null } },
+                    { value: "PENDIENTES", label: "Pendientes", symbol: { type: "simple-marker", color: [255, 140, 0, 0.8], size: 6, outline: null } }
+                ]
+            },
+            popupTemplate: {
+                title: "Atención PH: {Ficha}",
+                content: [{
+                    type: "fields", fieldInfos: [
+                        { fieldName: "Fecha", label: "Fecha" },
+                        { fieldName: "Tipo", label: "Tipo" },
+                        { fieldName: "SubTipo", label: "SubTipo" },
+                        { fieldName: "Finalizacion_grupos", label: "Estado" }
+                    ]
+                }]
             }
         });
     }
@@ -252,9 +299,10 @@ define([
     function crearCapas(onAtencionesLista) {
         createAtencionesLayer(onAtencionesLista);
         return {
-            poiLayer:         createPoiLayer("geojson/poi.geojson"),
-            agasLayer:        createAgasLayer("geojson/agas.geojson"),
-            sectoresLayer:    createSectoresLayer("geojson/sectores.geojson"),
+            atencionesPHLayer: createAtencionesPHLayer(),
+            poiLayer: createPoiLayer("geojson/poi.geojson"),
+            agasLayer: createAgasLayer("geojson/agas.geojson"),
+            sectoresLayer: createSectoresLayer("geojson/sectores.geojson"),
             vulnerablesLayer: createVulnerablesLayer("geojson/vulnerables.geojson")
         };
     }
