@@ -5,7 +5,9 @@ define([
 ], function (GeoJSONLayer, SimpleFillSymbol) {
 
     const _hoy = new Date().toISOString().substring(0, 10);
-    const _semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+    /* const _semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10); */
+    const _semanaAtras = "2026-01-01";
+
     const SHEETS_CSV_URL = "https://script.google.com/macros/s/AKfycby8YoB9vp6xAqvrC64fRuDz0JMidX9k5RAHWw1Ri9yAJ4Uu9ZG78cDkAFmnfNA8MGaN/exec";
 
     function parsearCSV(texto) {
@@ -258,7 +260,7 @@ define([
 
     function createAtencionesPHLayer() {
         return new GeoJSONLayer({
-            url: `https://siesep.seguraep.gob.ec/Lectura_Fichas/consulta_historico.php?desde=${_semanaAtras}&hasta=${_hoy}&agencia=ATENCI%20PH&limit=25000`,
+            url: `https://siesep.seguraep.gob.ec/Lectura_Fichas/consulta_historico.php?desde=${_semanaAtras}&hasta=${_hoy}&agencia=ATENCI%20PH&estados=RESUELTAS,PENDIENTES&limit=25000`,
             title: "Atenciones PH",
             fields: [
                 { name: "Fecha", type: "string" },
@@ -275,8 +277,8 @@ define([
                 field: "Finalizacion_grupos",
                 defaultSymbol: { type: "simple-marker", color: [255, 140, 0, 0.8], size: 6, outline: null },
                 uniqueValueInfos: [
-                    { value: "RESUELTAS", label: "Resueltas", symbol: { type: "simple-marker", color: [40, 167, 69, 0.8], size: 6, outline: null } },
-                    { value: "PENDIENTES", label: "Pendientes", symbol: { type: "simple-marker", color: [255, 140, 0, 0.8], size: 6, outline: null } }
+                    { value: "RESUELTAS", label: "Resueltas", symbol: { type: "picture-marker", url: "img/marker_1.png", width: "28px", height: "28px" } },
+                    { value: "PENDIENTES", label: "Pendientes", symbol: { type: "picture-marker", url: "img/marker_2.png", width: "28px", height: "28px" } }
                 ]
             },
             popupTemplate: {

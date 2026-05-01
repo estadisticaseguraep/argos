@@ -94,7 +94,20 @@ require([
             actualizarConteo(queryGeomActiva);
 
             // Registrar en UI el checkbox de Brigadas Médicas
-            ui.agregarCheckboxes("puntos-slot", puntosConfig());
+            ui.agregarCheckboxes("puntos-slot", [
+                {
+                    layer: atencionesLayer, label: "Brigadas Médicas", color: "#0077b6",
+                    onChange: function () { traerGraficosAlFrente(); }
+                },
+                {
+                    layer: atencionesPHLayer, label: "Atenciones PH", color: "#28a745", conFiltroGrupos: true,
+                    onChange: function () { traerGraficosAlFrente(); }
+                },
+                {
+                    layer: poiLayer, label: "Establecimientos Salud", color: "#e84646",
+                    onChange: function () { traerGraficosAlFrente(); }
+                }
+            ]);
         });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -134,25 +147,16 @@ require([
 
     // ── UI ────────────────────────────────────────────────────────────────────
     const ui = setupUI(view, {
-        capas: { atencionesLayer, poiLayer, agasLayer, sectoresLayer, vulnerablesLayer },
+        capas: {
+            get atencionesLayer() { return atencionesLayer; },
+            poiLayer, agasLayer, sectoresLayer, vulnerablesLayer
+        },
         conteoDiv: conteoDiv,
         onFiltroChange: function (activo) {
             queryZonaActiva = activo;
             actualizarConteo(queryGeomActiva);
         }
     });
-
-    // Checkboxes de POI ya disponible; Brigadas se registra en el callback
-    ui.agregarCheckboxes("puntos-slot", [
-        {
-            layer: atencionesPHLayer, label: "Atenciones PH", color: "#28a745",  conFiltroGrupos: true,
-            onChange: function () { traerGraficosAlFrente(); }
-        },
-        {
-            layer: poiLayer, label: "Establecimientos Salud", color: "#e84646",
-            onChange: function () { traerGraficosAlFrente(); }
-        }
-    ]);
 
     // ── Query por geometría ───────────────────────────────────────────────────
     view.when().then(function () {

@@ -152,7 +152,9 @@ define([
                         ci.removeAttribute("selected");
                     });
                     cfg.layer.definitionExpression = "1=1";
-                    cfg.atencionesLayer.filtrarPorCampo(cfg.campo, []);
+
+                    if (capas.atencionesLayer) capas.atencionesLayer.filtrarPorCampo(cfg.campo, []);
+
                     cfg.poiLayer.definitionExpression = "1=1";
                     if (onFiltroChange) onFiltroChange(false);
                 }
@@ -175,7 +177,8 @@ define([
 
                 // Filtrar la capa de zona y la capa de atenciones
                 cfg.layer.definitionExpression = expr;
-                cfg.atencionesLayer.filtrarPorCampo(cfg.campo, sel);
+
+                if (capas.atencionesLayer) capas.atencionesLayer.filtrarPorCampo(cfg.campo, sel);
                 cfg.poiLayer.definitionExpression = expr;
 
                 // Notificar para actualizar el conteo
@@ -199,7 +202,6 @@ define([
             heading: "Coberturas AGAs",
             color: "#00b4d8",
             layer: agasLayer,
-            atencionesLayer: capas.atencionesLayer,
             poiLayer: capas.poiLayer,
             geojson: "geojson/agas.geojson",
             campo: "AGA"
@@ -209,7 +211,6 @@ define([
             heading: "Sectores",
             color: "#0077b6",
             layer: sectoresLayer,
-            atencionesLayer: capas.atencionesLayer,
             poiLayer: capas.poiLayer,
             geojson: "geojson/sectores.geojson",
             campo: "SECT_NOMEN"
@@ -219,7 +220,6 @@ define([
             heading: "Habitantes Vulnerables",
             color: "#1eb600",
             layer: vulnerablesLayer,
-            atencionesLayer: capas.atencionesLayer,
             poiLayer: capas.poiLayer,
             geojson: "geojson/vulnerables.geojson",
             campo: "AGA"
@@ -352,14 +352,16 @@ define([
                     row.appendChild(chk);
                     row.appendChild(dot);
                     row.appendChild(sp);
-                    slot.appendChild(row);
+
+                    const wrapper = document.createElement("div");
+                    wrapper.appendChild(row);
 
                     // ── Combobox de Finalizacion_grupos ───────────────────────
                     let combo = null;
                     if (cfg.conFiltroGrupos) {
-                        combo = document.createElement("calcite-combobox");
+                        const combo = document.createElement("calcite-combobox");
                         combo.setAttribute("placeholder", "Filtrar estado...");
-                        combo.setAttribute("selection-mode", "multiple");
+                        combo.setAttribute("selection-mode", "single");
                         combo.setAttribute("scale", "s");
                         combo.setAttribute("overlay-positioning", "fixed");
                         combo.style.cssText = "display:none;margin-top:4px;width:100%;";
@@ -371,25 +373,33 @@ define([
                             combo.appendChild(ci);
                         });
 
-                        slot.appendChild(combo);
+                        wrapper.appendChild(combo);
 
-                        combo.addEventListener("calciteComboboxChange", function () {
-                            const sel = Array.from(combo.selectedItems).map(function (i) { return i.value; });
-                            if (!sel.length) {
-                                cfg.layer.definitionExpression = null;
-                            } else {
-                                const whereIn = sel.map(function (v) { return "'" + v + "'"; }).join(",");
-                                cfg.layer.definitionExpression = "Finalizacion_grupos IN (" + whereIn + ")";
-                            }
+                        combo.addEventListener("calciteComboboxChange", function (e) {
+                            const val = e.target.value;
+                            cfg.layer.definitionExpression = val
+                                ? "Finalizacion_grupos = '" + val + "'"
+                                : null;
+                            if (onFiltroChange) onFiltroChange(!!val);
                         });
+
+                        chk.addEventListener("change", function () {
+                            if (cfg.layer) cfg.layer.visible = chk.checked;
+                            combo.style.display = chk.checked ? "" : "none";
+                            if (!chk.checked) { cfg.layer.definitionExpression = null; combo.value = ""; }
+                            if (cfg.onChange) cfg.onChange(chk.checked, cfg.layer);
+                        });
+
+                        slot.appendChild(wrapper);
+                        return;
                     }
 
                     chk.addEventListener("change", function () {
                         if (cfg.layer) cfg.layer.visible = chk.checked;
-                        if (combo) combo.style.display = chk.checked ? "" : "none";
-                        if (!chk.checked && cfg.layer) cfg.layer.definitionExpression = null;
                         if (cfg.onChange) cfg.onChange(chk.checked, cfg.layer);
                     });
+
+                    slot.appendChild(wrapper);
                 });
             }
         };
