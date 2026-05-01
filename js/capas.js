@@ -6,7 +6,7 @@ define([
 
     const _hoy = new Date().toISOString().substring(0, 10);
     const _semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
-    const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRUBlj07rIgsuUc06O31K2jBG544KRSmL2GeHFdaAHarqx63yzFjZtNBWFUbi8iyCjyNmcvPQRgwo8X/pub?gid=249981787&single=true&output=csv";
+    const SHEETS_CSV_URL = "https://script.google.com/macros/s/AKfycby8YoB9vp6xAqvrC64fRuDz0JMidX9k5RAHWw1Ri9yAJ4Uu9ZG78cDkAFmnfNA8MGaN/exec";
 
     function parsearCSV(texto) {
         const filas = texto.trim().split("\n");
@@ -21,11 +21,9 @@ define([
 
     // ── Atenciones: carga CSV → Blob → GeoJSONLayer ──────────────────────────
     function createAtencionesLayer(onLista) {
-        fetch(SHEETS_CSV_URL + "&t=" + Date.now())
-            .then(function (r) { return r.text(); })
-            .then(function (texto) {
-                const registros = parsearCSV(texto);
-
+        fetch(SHEETS_CSV_URL + "?t=" + Date.now())
+            .then(function (r) { return r.json(); })
+            .then(function (registros) {
                 const features = registros
                     .filter(function (r) {
                         return r.Latitud && r.Longitud &&
