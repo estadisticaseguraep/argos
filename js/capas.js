@@ -8,7 +8,7 @@ define([
     /* const _semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10); */
     const _semanaAtras = "2026-01-01";
 
-    const SHEETS_CSV_URL = "https://script.google.com/macros/s/AKfycbzgm_QgrC6fS86yri1htdZIpIdYRVAC-AvYEOpsbScfG8OsWti04joE9TMZVjrXBH_GKQ/exec";
+    const SHEETS_CSV_URL = "https://script.google.com/macros/s/AKfycbyBRVwrwlKbPbvo5HXNCZV0HcilrWRQzo7nrtfxfVWs-rzWcD-FPIL0pc2Fr5Kya-75eA/exec";
 
     function parsearCSV(texto) {
         const filas = texto.trim().split("\n");
