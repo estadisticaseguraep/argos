@@ -6,7 +6,7 @@ define([
 
     const _hoy = new Date().toISOString().substring(0, 10);
     /* const _semanaAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10); */
-    const _semanaAtras = "2026-01-01";
+    const _semanaAtras = "2025-02-11";
 
     const SHEETS_CSV_URL = "https://script.google.com/macros/s/AKfycbyBRVwrwlKbPbvo5HXNCZV0HcilrWRQzo7nrtfxfVWs-rzWcD-FPIL0pc2Fr5Kya-75eA/exec";
 
