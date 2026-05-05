@@ -103,6 +103,7 @@ define([
     function createPoiLayer(url) {
         return new GeoJSONLayer({
             url: url,
+            visible: true,
             title: "Establecimientos de Salud",
             renderer: {
                 type: "simple",
