@@ -261,7 +261,7 @@ define([
 
     function createAtencionesPHLayer() {
         return new GeoJSONLayer({
-            url: `https://siesep.seguraep.gob.ec/Lectura_Fichas/consulta_historico.php?desde=${_semanaAtras}&hasta=${_hoy}&agencia=ATENCI%20PH&estados=RESUELTAS,PENDIENTES&limit=25000`,
+            url: `https://siesep.seguraep.gob.ec/Lectura_Fichas/consulta_historico.php?desde=${_semanaAtras}&hasta=${_hoy}&agencia=ATENCI%20PH&estados=RESUELTAS,PENDIENTES&limit=30000`,
             title: "Atenciones PH",
             fields: [
                 { name: "Fecha", type: "string" },
