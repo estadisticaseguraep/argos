@@ -102,7 +102,7 @@ require([
             elBlock.textContent = esFiltrado ? "🔵 Registros filtrados" : "Totales";
             elBlock.style.color = esFiltrado ? "#0077b6" : "";
 
-            elBrigadas.textContent = rAtenciones.count.toLocaleString() + " atenciones";
+            elBrigadas.textContent = rAtenciones.count.toLocaleString() + " brigadas";
             elPH.textContent = rAtencionesPH.count.toLocaleString() + " atenciones";
             elPoi.textContent = rPoi.count.toLocaleString() + " establecimientos";
             elZonas.innerHTML = `${rAgas.count} AGAs<br>${rSectores.count} Sectores<br>${rVulnerables.count} Vulnerables`;
