@@ -296,6 +296,38 @@ define([
         });
     }
 
+    function createInundacionesLayer(url) {
+        return new GeoJSONLayer({
+            url: url,
+            title: "Zonas Vulnerables Inundación",
+            visible: true,
+            outFields: ["*"],
+            renderer: {
+                type: "simple",
+                symbol: new SimpleFillSymbol({
+                    color: [89, 227, 255, 0.2],
+                    outline: { color: "white", width: 1.0 }
+                })
+            }
+        });
+    }
+
+    function createDeslizamientosLayer(url) {
+        return new GeoJSONLayer({
+            url: url,
+            title: "Zonas Vulnerables Deslizamientos",
+            visible: true,
+            outFields: ["*"],
+            renderer: {
+                type: "simple",
+                symbol: new SimpleFillSymbol({
+                    color: [235, 217, 82, 0.2],
+                    outline: { color: "white", width: 1.0 }
+                })
+            }
+        });
+    }
+
     // ── Exportación ───────────────────────────────────────────────────────────
     function crearCapas(onAtencionesLista) {
         createAtencionesLayer(onAtencionesLista);
@@ -304,7 +336,9 @@ define([
             poiLayer: createPoiLayer("geojson/poi.geojson"),
             agasLayer: createAgasLayer("geojson/agas.geojson"),
             sectoresLayer: createSectoresLayer("geojson/sectores.geojson"),
-            vulnerablesLayer: createVulnerablesLayer("geojson/vulnerables.geojson")
+            vulnerablesLayer: createVulnerablesLayer("geojson/vulnerables.geojson"),
+            inundacionLayer: createInundacionesLayer("geojson/zonas_inundacion.geojson"),
+            deslizamientosLayer: createDeslizamientosLayer("geojson/deslizamientos.geojson")
         };
     }
 

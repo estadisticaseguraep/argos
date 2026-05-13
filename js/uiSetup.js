@@ -41,7 +41,7 @@ define([
 
     return function setupUI(view, opciones) {
         const { capas, conteoDiv, onFiltroChange } = opciones;
-        const { agasLayer, sectoresLayer, vulnerablesLayer } = capas;
+        const { agasLayer, sectoresLayer, vulnerablesLayer, inundacionLayer, deslizamientosLayer } = capas;
 
         view.ui.add(new Fullscreen({ view }), "top-right");
         view.ui.add(new Expand({
@@ -65,9 +65,10 @@ define([
         panel.className = "cp-panel";
 
         const TABS = [
-            { id: "puntos", label: "Capas",  icon: "layers"   },
-            { id: "zonas",  label: "Zonas",  icon: "map-pin"  },
-            { id: "radar",  label: "Radar",  icon: "analysis" }
+            { id: "puntos", label: "Capas", icon: "layers" },
+            { id: "zonas", label: "Zonas", icon: "map-pin" },
+            { id: "riesgos", label: "Riesgos", icon: "urban-model" },
+            { id: "radar", label: "Radar", icon: "analysis" }
         ];
 
         const tabBar = document.createElement("div");
@@ -179,8 +180,8 @@ define([
                         .forEach(function (ci) { ci.removeAttribute("selected"); });
                     cfg.layer.definitionExpression = "1=1";
                     aplicarFiltroEspacial(capas.poiLayer, null);
-                    if (capas.atencionesLayer)   aplicarFiltroEspacial(capas.atencionesLayer, null);
-                    if (capas.atencionesPHLayer)  aplicarFiltroEspacial(capas.atencionesPHLayer, null);
+                    if (capas.atencionesLayer) aplicarFiltroEspacial(capas.atencionesLayer, null);
+                    if (capas.atencionesPHLayer) aplicarFiltroEspacial(capas.atencionesPHLayer, null);
                     if (onFiltroChange) onFiltroChange(false, null);
                 }
             });
@@ -191,8 +192,8 @@ define([
                 if (sel.length === 0) {
                     cfg.layer.definitionExpression = "1=1";
                     aplicarFiltroEspacial(capas.poiLayer, null);
-                    if (capas.atencionesLayer)   aplicarFiltroEspacial(capas.atencionesLayer, null);
-                    if (capas.atencionesPHLayer)  aplicarFiltroEspacial(capas.atencionesPHLayer, null);
+                    if (capas.atencionesLayer) aplicarFiltroEspacial(capas.atencionesLayer, null);
+                    if (capas.atencionesPHLayer) aplicarFiltroEspacial(capas.atencionesPHLayer, null);
                     if (onFiltroChange) onFiltroChange(false, null);
                     return;
                 }
@@ -200,8 +201,8 @@ define([
                 obtenerGeometriaZona(cfg.layer, cfg.campo, sel).then(function (geom) {
                     if (!geom) return;
                     aplicarFiltroEspacial(capas.poiLayer, geom);
-                    if (capas.atencionesLayer)   aplicarFiltroEspacial(capas.atencionesLayer, geom);
-                    if (capas.atencionesPHLayer)  aplicarFiltroEspacial(capas.atencionesPHLayer, geom);
+                    if (capas.atencionesLayer) aplicarFiltroEspacial(capas.atencionesLayer, geom);
+                    if (capas.atencionesPHLayer) aplicarFiltroEspacial(capas.atencionesPHLayer, geom);
 
                     const whereIn = sel.map(function (v) { return "'" + v + "'"; }).join(",");
                     cfg.layer.definitionExpression = cfg.campo + " IN (" + whereIn + ")";
@@ -223,12 +224,44 @@ define([
         }
 
         [
-            { heading: "Coberturas AGAs",        color: "#00b4d8", layer: agasLayer,        geojson: "geojson/agas.geojson",        campo: "AGA"        },
-            { heading: "Sectores",               color: "#0077b6", layer: sectoresLayer,    geojson: "geojson/sectores.geojson",    campo: "SECT_NOMEN" },
-            { heading: "Habitantes Vulnerables", color: "#1eb600", layer: vulnerablesLayer, geojson: "geojson/vulnerables.geojson", campo: "AGA"        }
+            { heading: "Coberturas AGAs", color: "#00b4d8", layer: agasLayer, geojson: "geojson/agas.geojson", campo: "AGA" },
+            { heading: "Sectores", color: "#0077b6", layer: sectoresLayer, geojson: "geojson/sectores.geojson", campo: "SECT_NOMEN" },
+            { heading: "Habitantes Vulnerables", color: "#1eb600", layer: vulnerablesLayer, geojson: "geojson/vulnerables.geojson", campo: "AGA" }
         ].forEach(function (cfg) { accordion.appendChild(crearItemZona(cfg)); });
 
         panes["zonas"].appendChild(accordion);
+
+        // ── Tab Riesgos ───────────────────────────────────────────────────────────
+        [
+            { layer: inundacionLayer, label: "Zonas de Inundación", color: "#59e3ff" },
+            { layer: deslizamientosLayer, label: "Deslizamientos", color: "#ebd952" }
+        ].forEach(function (cfg) {
+            const row = document.createElement("label");
+            row.className = "cp-row";
+            row.style.padding = "6px 2px";
+
+            const chk = document.createElement("input");
+            chk.type = "checkbox";
+            chk.checked = cfg.layer.visible;
+            chk.style.accentColor = cfg.color;
+
+            const dot = document.createElement("span");
+            dot.className = "cp-dot";
+            dot.style.background = cfg.color;
+
+            const txt = document.createElement("span");
+            txt.textContent = cfg.label;
+
+            row.appendChild(chk);
+            row.appendChild(dot);
+            row.appendChild(txt);
+
+            chk.addEventListener("change", function () {
+                cfg.layer.visible = chk.checked;
+            });
+
+            panes["riesgos"].appendChild(row);
+        });
 
         // ── Tab Radar ─────────────────────────────────────────────────────────
         const radarPane = panes["radar"];
@@ -241,9 +274,9 @@ define([
         const watsonBtnBar = document.createElement("div");
         watsonBtnBar.className = "watson-btnbar";
         [
-            { id: "queryPoint",   icon: "pin",     label: "Punto",   type: "point"    },
-            { id: "queryLine",    icon: "line",     label: "Linea",   type: "polyline" },
-            { id: "queryPolygon", icon: "polygon",  label: "Poligono",type: "polygon"  }
+            { id: "queryPoint", icon: "pin", label: "Punto", type: "point" },
+            { id: "queryLine", icon: "line", label: "Linea", type: "polyline" },
+            { id: "queryPolygon", icon: "polygon", label: "Poligono", type: "polygon" }
         ].forEach(function (dt) {
             const btn = document.createElement("button");
             btn.className = "watson-tool-btn";
