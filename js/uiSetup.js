@@ -39,6 +39,44 @@ define([
         );
     }
 
+    // ── Buscador Brigadas: pobla el combobox buscando por Nombre o Sector ────
+    function poblarBuscadorBrigadas(layer, combo, mapView) {
+        const query = layer.createQuery();
+        query.where = "1=1";
+        query.outFields = ["Nombre", "Fecha_Brigada", "Sector", "AGA", "Parroquia"];
+        query.returnGeometry = true;
+        query.orderByFields = ["Nombre ASC"];
+
+        layer.queryFeatures(query).then(function (result) {
+            combo.innerHTML = "";  // limpiar items previos
+
+            result.features.forEach(function (feature) {
+                const nombre  = (feature.attributes.Nombre  || "").trim();
+                const sector  = (feature.attributes.Sector  || "").trim();
+
+                // Necesitamos al menos uno de los dos para mostrar el item
+                if (!nombre && !sector) return;
+
+                // Texto visible: "Nombre — Sector" o solo el que exista
+                const textLabel = nombre && sector
+                    ? nombre + " — " + sector
+                    : nombre || sector;
+
+                // Valor de búsqueda: concatenación para que filtre por ambos
+                const value = textLabel;
+
+                const item = document.createElement("calcite-combobox-item");
+                item.setAttribute("value", value);
+                item.setAttribute("text-label", textLabel);
+                item._featureGeometry   = feature.geometry;
+                item._featureAttributes = feature.attributes;
+                combo.appendChild(item);
+            });
+        }).catch(function (e) {
+            console.error("Error cargando brigadas para buscador:", e);
+        });
+    }
+
     return function setupUI(view, opciones) {
         const { capas, conteoDiv, onFiltroChange } = opciones;
         const { agasLayer, sectoresLayer, vulnerablesLayer, inundacionLayer, deslizamientosLayer } = capas;
@@ -352,9 +390,80 @@ define([
         });
         view.ui.add(legendExpand, "bottom-left");
 
+        // ── Buscador Brigadas Médicas (bottom-left, oculto por defecto) ───────
+        const buscadorContainer = document.createElement("div");
+        buscadorContainer.style.cssText = "width:260px;padding:4px;";
+
+        const buscadorLabel = document.createElement("div");
+        buscadorLabel.style.cssText = "font-size:11px;font-weight:600;color:var(--calcite-color-text-2);" +
+            "border-bottom:1px solid var(--calcite-color-border-2);padding-bottom:4px;margin-bottom:6px;";
+        buscadorLabel.innerHTML = '<calcite-icon icon="map-pin" scale="s" style="vertical-align:middle;margin-right:4px;"></calcite-icon>' +
+            "Buscador Brigadas";
+        buscadorContainer.appendChild(buscadorLabel);
+
+        const buscadorCombo = document.createElement("calcite-combobox");
+        buscadorCombo.setAttribute("placeholder", "Ingrese el criterio de búsqueda");
+        buscadorCombo.setAttribute("selection-mode", "single");
+        buscadorCombo.setAttribute("scale", "m");
+        buscadorCombo.setAttribute("overlay-positioning", "fixed");
+        buscadorCombo.setAttribute("max-items", "8");
+        buscadorCombo.style.width = "100%";
+        buscadorContainer.appendChild(buscadorCombo);
+
+        const buscadorExpand = new Expand({
+            view,
+            content: buscadorContainer,
+            expandIcon: "search",
+            expandTooltip: "Buscar Brigada Médica",
+            expanded: true
+        });
+        buscadorExpand.visible = true;   // visible desde el inicio: la capa ya arranca activa
+        view.ui.add(buscadorExpand, "bottom-left");
+
+        // Evento de selección: zoom al punto
+        buscadorCombo.addEventListener("calciteComboboxChange", function () {
+            const selected = buscadorCombo.selectedItems;
+            if (!selected || selected.length === 0) return;
+            const item = selected[0];
+            const geom = item._featureGeometry;
+            const attrs = item._featureAttributes;
+
+            if (geom) {
+                view.goTo(
+                    { target: geom, zoom: 17 },
+                    { duration: 900, easing: "ease-in-out" }
+                ).then(function () {
+                    // Abrir popup en el punto
+                    view.openPopup({
+                        location: geom,
+                        features: [{
+                            geometry: geom,
+                            attributes: attrs,
+                            popupTemplate: {
+                                title: "Brigada Médica",
+                                content: [{
+                                    type: "fields",
+                                    fieldInfos: [
+                                        { fieldName: "Nombre", label: "Nombre" },
+                                        { fieldName: "Fecha_Brigada", label: "Fecha Brigada" },
+                                        { fieldName: "Año", label: "Año" },
+                                        { fieldName: "Sector", label: "Sector" },
+                                        { fieldName: "AGA", label: "AGA" },
+                                        { fieldName: "Parroquia", label: "Parroquia" },
+                                        { fieldName: "Telefono", label: "Teléfono" }
+                                    ]
+                                }]
+                            }
+                        }]
+                    });
+                });
+            }
+        });
+
         // ── API pública ───────────────────────────────────────────────────────
         return {
-            agregarCheckboxes: function (slotId, items) {
+            // mapView es opcional; si se pasa permite el buscador de brigadas
+            agregarCheckboxes: function (slotId, items, mapView) {
                 const slot = panel.querySelector("[data-slot=\"" + slotId + "\"]");
                 if (!slot) return;
                 slot.innerHTML = "";
@@ -378,7 +487,41 @@ define([
                     const wrapper = document.createElement("div");
                     wrapper.appendChild(row);
 
-                    if (cfg.conFiltroGrupos) {
+                    if (cfg.esBrigadas && mapView) {
+                        // ── Checkbox de Brigadas: controla visibilidad del buscador ──
+
+                        // Si la capa ya está visible al montar, poblar de inmediato
+                        if (chk.checked && !buscadorCombo._itemsLoaded) {
+                            buscadorCombo._itemsLoaded = true;
+                            poblarBuscadorBrigadas(cfg.layer, buscadorCombo, mapView);
+                        }
+
+                        chk.addEventListener("change", function () {
+                            cfg.layer.visible = chk.checked;
+
+                            if (chk.checked) {
+                                // Mostrar y abrir el expand del buscador
+                                buscadorExpand.visible = true;
+                                buscadorExpand.expand();
+
+                                // Poblar items solo la primera vez
+                                if (!buscadorCombo._itemsLoaded) {
+                                    buscadorCombo._itemsLoaded = true;
+                                    poblarBuscadorBrigadas(cfg.layer, buscadorCombo, mapView);
+                                }
+                            } else {
+                                // Ocultar y limpiar buscador
+                                buscadorExpand.visible = false;
+                                buscadorExpand.collapse();
+                                buscadorCombo.innerHTML = "";
+                                buscadorCombo._itemsLoaded = false;
+                                view.closePopup();
+                            }
+
+                            if (cfg.onChange) cfg.onChange();
+                        });
+
+                    } else if (cfg.conFiltroGrupos) {
                         const combo = document.createElement("calcite-combobox");
                         combo.setAttribute("placeholder", "Filtrar estado...");
                         combo.setAttribute("selection-mode", "single");
@@ -405,6 +548,7 @@ define([
                                 : null;
                             if (onFiltroChange) onFiltroChange(!!e.target.value, null);
                         });
+
                     } else {
                         chk.addEventListener("change", function () {
                             cfg.layer.visible = chk.checked;

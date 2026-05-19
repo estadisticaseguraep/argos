@@ -136,11 +136,12 @@ require([
             traerGraficosAlFrente();
             actualizarConteo(queryGeomZona || queryGeomActiva);
 
+            // ── CAMBIO: se pasa view como tercer argumento y esBrigadas:true ──
             ui.agregarCheckboxes("puntos-slot", [
-                { layer: atencionesLayer, label: "Brigadas Médicas", color: "#0077b6", onChange: traerGraficosAlFrente },
+                { layer: atencionesLayer, label: "Brigadas Médicas", color: "#0077b6", esBrigadas: true, onChange: traerGraficosAlFrente },
                 { layer: atencionesPHLayer, label: "Atenciones PH", color: "#28a745", conFiltroGrupos: true, onChange: traerGraficosAlFrente },
                 { layer: poiLayer, label: "Establecimientos Salud", color: "#e84646", onChange: traerGraficosAlFrente }
-            ]);
+            ], view);
         });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
